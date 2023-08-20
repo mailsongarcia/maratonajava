@@ -16,6 +16,10 @@ public class Anime {
         private int episodes;
         private Producer producer;
 
+        public static AnimeBuilder builder() {
+            return null;
+        }
+
         public Integer getId() {
             return id;
         }
