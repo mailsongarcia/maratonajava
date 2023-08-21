@@ -10,6 +10,22 @@ public class Anime {
     Producer producer;
 
 
+    public Integer getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getEpisodes() {
+        return episodes;
+    }
+
+    public Producer getProducer() {
+        return producer;
+    }
+
     public static final class AnimeBuilder {
         private Integer id;
         private String name;
@@ -17,24 +33,10 @@ public class Anime {
         private Producer producer;
 
         public static AnimeBuilder builder() {
-            return null;
+            return new AnimeBuilder();
         }
 
-        public Integer getId() {
-            return id;
-        }
 
-        public String getName() {
-            return name;
-        }
-
-        public int getEpisodes() {
-            return episodes;
-        }
-
-        public Producer getProducer() {
-            return producer;
-        }
 
         private AnimeBuilder() {
         }

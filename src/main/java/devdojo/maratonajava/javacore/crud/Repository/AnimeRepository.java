@@ -14,23 +14,7 @@ import java.util.Optional;
 public class AnimeRepository {
 
 
-    public static List<Anime> findAll() {
-        log.info("Find all animes");
 
-        String sql = "SELECT id, name  FROM anime_store.anime";
-        List<Anime> animes = new ArrayList<>();
-
-        try (Connection conn = ConnectionFactory.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                Anime anime = Anime.AnimeBuilder.builder().id(rs.getInt("id")).name(rs.getString("name")).build();
-                animes.add(anime);
-
-            }
-        } catch (SQLException e) {
-            log.error("Error while trying to find all animes in the database");
-        }
-        return animes;
-    }
 
     public static List<Anime> findByName(String name) {
         log.info("Find all animes by name '{}'", name);
@@ -41,8 +25,8 @@ public class AnimeRepository {
                 Producer producer = Producer
                         .ProducerBuilder.
                         builder()
-                        .id(rs.getInt("producer_id"))
                         .name(rs.getString("producer_name"))
+                        .id(rs.getInt("id_producer"))
                         .build();
                 Anime anime = Anime.AnimeBuilder
                         .builder()
@@ -94,27 +78,42 @@ public class AnimeRepository {
             ps.execute();
             log.info("Save anime '{}'", anime);
         } catch (SQLException e) {
-            log.error("Error while trying insert anime '{}' in the database", anime.getName(), e);
+            log.error("Error while trying insert anime '{}' in the database", anime.getId(), e);
             throw new RuntimeException(e);
         }
     }
 
     private static PreparedStatement createPrepareStatementSave(Connection conn, Anime anime) throws SQLException {
-        String sql = "INSERT INTO anime_store.anime (name) VALUES(?);";
+        String sql = "INSERT INTO anime_store.anime (name, episodes, id_producer) VALUES(?, ?, ?);";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, anime.getName());
+        ps.setInt(2, anime.getEpisodes());
+        ps.setInt(3, anime.getProducer().getId());
         return ps;
 
     }
 
     public static Optional<Anime> findById(Integer id) {
-        log.info("Find all animes by id '{}'", id);
+        log.info("Find all id by id '{}'", id);
 
         try (Connection conn = ConnectionFactory.getConnection(); PreparedStatement ps = createPrepareStatementFindById(conn, id); ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) return Optional.empty();
+            while (rs.next()) {
+                Producer producer = Producer
+                        .ProducerBuilder.
+                        builder()
+                        .name(rs.getString("producer_name"))
+                        .id(rs.getInt("id_producer"))
+                        .build();
+                return Optional.of( Anime.AnimeBuilder
+                        .builder()
+                        .id(rs.getInt("id"))
+                        .name(rs.getString("name"))
+                        .episodes(rs.getInt("episodes"))
+                        .producer(producer)
+                        .build());
 
-            return Optional.of(Anime.AnimeBuilder.builder().id(rs.getInt("id")).name(rs.getString("name")).build());
 
+            }
         } catch (SQLException e) {
             log.error("Error while trying to find all animes in the database");
         }
@@ -122,8 +121,10 @@ public class AnimeRepository {
     }
 
     private static PreparedStatement createPrepareStatementFindById(Connection conn, Integer id) throws SQLException {
-        String sql = "SELECT * FROM anime_store.anime where id = ?;";
-        PreparedStatement ps = conn.prepareStatement(sql);
+        String sql = """
+                select a.id, a.name, a.episodes, a.id_producer, p.name as 'producer_name' from anime_store.anime a inner join
+                anime_store.producer p on a.id_producer = p.id 
+                where a.id = ?""";        PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, id);
         return ps;
     }
@@ -139,10 +140,11 @@ public class AnimeRepository {
     }
 
     private static PreparedStatement updatePrepareStatementFindById(Connection conn, Anime anime) throws SQLException {
-        String sql = "UPDATE anime_store.anime SET name = '?' WHERE (id = ?);";
+        String sql = "UPDATE anime_store.anime SET name = ?, episodes = ? WHERE (id = ?);";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, anime.getName());
-        ps.setInt(1, anime.getId());
+        ps.setInt(2, anime.getEpisodes());
+        ps.setInt(3, anime.getId());
         return ps;
     }
 }

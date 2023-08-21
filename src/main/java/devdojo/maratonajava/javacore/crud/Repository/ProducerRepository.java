@@ -154,7 +154,7 @@ public class ProducerRepository {
         String sql = "UPDATE anime_store.producer SET name = '?' WHERE (id = ?);";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, producer.getName());
-        ps.setInt(1, producer.getId());
+        ps.setInt(2, producer.getId());
         return ps;
     }
 }
